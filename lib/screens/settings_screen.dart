@@ -7,6 +7,7 @@ import '../config/app_config.dart';
 import '../models/device_status.dart';
 import '../models/wol_pc.dart';
 import 'button_list_screen.dart';
+import 'macro_list_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -128,6 +129,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const ButtonListScreen()),
+              ),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.playlist_play, size: 28),
+              title: const Text(
+                '매크로 편집',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text('여러 동작을 묶은 매크로 추가 · 삭제 · 수정 (홈 화면 버튼)'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MacroListScreen()),
               ),
             ),
           ),

@@ -6,12 +6,13 @@ import 'actions/action_ids.dart';
 import 'actions/action_models.dart';
 import 'actions/action_router.dart';
 import 'actions/interlock_manager.dart';
-import 'actions/macro_registry.dart';
 import 'ce/wol_client.dart';
 import 'config/app_config.dart';
 import 'config/button_repository.dart';
 import 'config/config_repository.dart';
+import 'config/macro_repository.dart';
 import 'models/button_config.dart';
+import 'models/macro_config.dart';
 import 'models/command_result.dart';
 import 'models/device_status.dart';
 import 'nx/device_state_store.dart';
@@ -19,9 +20,13 @@ import 'nx/feedback_parser.dart';
 import 'nx/nx_connection.dart';
 
 class AppState extends ChangeNotifier {
-  AppState({ConfigRepository? repository, ButtonRepository? buttonRepository})
-      : _repo = repository ?? ConfigRepository(),
-        _buttonRepo = buttonRepository ?? ButtonRepository() {
+  AppState({
+    ConfigRepository? repository,
+    ButtonRepository? buttonRepository,
+    MacroRepository? macroRepository,
+  })  : _repo = repository ?? ConfigRepository(),
+        _buttonRepo = buttonRepository ?? ButtonRepository(),
+        _macroRepo = macroRepository ?? MacroRepository() {
     _deviceStates.addListener(notifyListeners);
     _nx = NxConnection(config: () => _config.nx, onFeedback: _onFeedback)
       ..addListener(notifyListeners);
@@ -35,6 +40,7 @@ class AppState extends ChangeNotifier {
 
   final ConfigRepository _repo;
   final ButtonRepository _buttonRepo;
+  final MacroRepository _macroRepo;
   final DeviceStateStore _deviceStates = DeviceStateStore();
   late final NxConnection _nx;
   late final ActionRouter router;
@@ -46,6 +52,9 @@ class AppState extends ChangeNotifier {
 
   List<ButtonConfig> _buttons = const [];
   List<ButtonConfig> get buttons => List.unmodifiable(_buttons);
+
+  List<MacroConfig> _macros = const [];
+  List<MacroConfig> get macros => List.unmodifiable(_macros);
 
   Map<String, ActionDef> _actionMap = {};
 
@@ -60,8 +69,8 @@ class AppState extends ChangeNotifier {
     for (final b in _buttons) {
       map[b.id] = b.toActionDef();
     }
-    for (final m in builtInMacros()) {
-      map[m.id] = m;
+    for (final m in _macros) {
+      map[m.id] = m.toActionDef();
     }
     for (final pc in _config.pcs) {
       map[ActionIds.wol(pc.id)] =
@@ -106,6 +115,7 @@ class AppState extends ChangeNotifier {
   Future<void> init() async {
     _config = await _repo.load();
     _buttons = await _buttonRepo.load();
+    _macros = await _macroRepo.load();
     _rebuildActionMap();
     _loaded = true;
     notifyListeners();
@@ -149,6 +159,41 @@ class AppState extends ChangeNotifier {
   }
 
   String newButtonId() => 'btn_${DateTime.now().microsecondsSinceEpoch}';
+
+  Future<bool> _persistMacros() async {
+    _rebuildActionMap();
+    notifyListeners();
+    return _macroRepo.save(_macros);
+  }
+
+  Future<bool> addMacro(MacroConfig macro) {
+    _macros = [..._macros, macro];
+    return _persistMacros();
+  }
+
+  Future<bool> updateMacro(MacroConfig macro) {
+    _macros = [
+      for (final m in _macros)
+        if (m.id == macro.id) macro else m,
+    ];
+    return _persistMacros();
+  }
+
+  Future<bool> deleteMacro(String id) {
+    _macros = [
+      for (final m in _macros)
+        if (m.id != id) m,
+    ];
+    return _persistMacros();
+  }
+
+  Future<bool> resetMacros() async {
+    await _macroRepo.reset();
+    _macros = await _macroRepo.load();
+    return _persistMacros();
+  }
+
+  String newMacroId() => 'macro_${DateTime.now().microsecondsSinceEpoch}';
 
   void unawaitedTest() {
     unawaited(testNx());

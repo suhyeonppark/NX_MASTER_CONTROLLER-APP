@@ -30,7 +30,9 @@ class ActionRouter {
     return def?.confirmMessage ?? '이 동작을 실행하시겠습니까?';
   }
 
-  Future<CommandResult> run(String actionId) {
+  Future<CommandResult> run(String actionId) => _run(actionId, const {});
+
+  Future<CommandResult> _run(String actionId, Set<String> active) {
     final def = _resolve(actionId);
     if (def == null) {
       return Future.value(CommandResult.fail('정의되지 않은 동작입니다: $actionId'));
@@ -41,21 +43,31 @@ class ActionRouter {
       SerialAction() => _nx.send(NxCommand.serial(def.port, def.message)),
       IoAction() => _nx.send(NxCommand.io(def.port, def.ch, def.value)),
       WolAction() => _wol.wake(def.mac, name: def.name),
-      MacroAction() => _runMacro(def),
+      MacroAction() => _runMacro(def, active),
     };
   }
 
-  Future<CommandResult> _runMacro(MacroAction macro) async {
+  Future<CommandResult> _runMacro(MacroAction macro, Set<String> active) async {
     if (macro.steps.isEmpty) {
       return CommandResult.fail('등록된 PC가 없습니다. 설정에서 추가하세요.');
     }
+
+    // Guard against a user-created cycle (macro that references itself directly
+    // or through another macro). Without this, recursion would never terminate.
+    final nextActive = {...active, macro.id};
 
     final sent = <String>[];
     var sawWarning = false;
 
     for (var i = 0; i < macro.steps.length; i++) {
       final step = macro.steps[i];
-      final result = await run(step.actionId);
+      if (nextActive.contains(step.actionId)) {
+        return CommandResult.fail(
+          '매크로 실패: ${i + 1}단계(${step.actionId}) - 순환 참조',
+          sentCommands: sent,
+        );
+      }
+      final result = await _run(step.actionId, nextActive);
       sent.addAll(result.sentCommands);
 
       if (!result.success) {
