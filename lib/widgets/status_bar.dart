@@ -14,7 +14,7 @@ class ConnectionDots extends StatelessWidget {
       onTap: () => _showDetails(context, state),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: _Chip(label: 'NX', status: state.nxStatus),
+        child: _Chip(label: '마스터', status: state.nxStatus),
       ),
     );
   }
@@ -25,7 +25,7 @@ class ConnectionDots extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('연결 상태'),
-        content: _DetailRow(label: 'AMX NX-2200', status: state.nxStatus),
+        content: _DetailRow(label: '마스터', status: state.nxStatus),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),

@@ -61,7 +61,7 @@ class NxConnection extends ChangeNotifier {
     final active = _socket;
     if (active == null) {
       return CommandResult.fail(
-        _status.detail ?? 'NX 연결이 되어 있지 않습니다.',
+        _status.detail ?? '마스터 연결이 되어 있지 않습니다.',
         sentCommands: [command],
       );
     }

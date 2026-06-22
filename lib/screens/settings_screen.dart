@@ -96,10 +96,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _sectionTitle('AMX NX-2200'),
-          _ipField('NX IP', _nxIp),
-          _portField('NX Port', _nxPort),
-          _testRow('NX-2200', _testStatus, _test),
+          _sectionTitle('마스터'),
+          _ipField('마스터 IP', _nxIp),
+          _portField('마스터 Port', _nxPort),
+          _testRow('마스터', _testStatus, _test),
           const SizedBox(height: 24),
           _sectionTitle('공통'),
           _numberField('TCP Timeout (ms)', _timeout, min: 200, max: 30000),
@@ -151,7 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('앱 정보'),
-            subtitle: Text('NX-2200 Controller · v1.0.0'),
+            subtitle: Text('마스터 Controller · v1.0.0'),
           ),
         ],
       ),
@@ -295,7 +295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: TextFormField(
           controller: c,
           decoration: const InputDecoration(
-            labelText: 'NX IP',
+            labelText: '마스터 IP',
             border: OutlineInputBorder(),
             hintText: '192.168.1.100',
           ),
