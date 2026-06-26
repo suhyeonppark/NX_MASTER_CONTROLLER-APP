@@ -42,57 +42,92 @@ class _MacroProgressDialogState extends State<MacroProgressDialog>
     super.dispose();
   }
 
+  // Quiet industrial palette, matching ControlButton.
+  static const Color _accent = Color(0xFF356F62);
+  static const Color _track = Color(0xFFE3E7EA);
+  static const Color _ink = Color(0xFF20242B);
+  static const Color _muted = Color(0xFF7D848D);
+
   @override
   Widget build(BuildContext context) {
     final totalSeconds = widget.duration.inMilliseconds / 1000;
     return PopScope(
       canPop: false,
-      child: AlertDialog(
-        content: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final value = _controller.value;
-            final done = value >= 1.0;
-            final remaining =
-                (totalSeconds * (1 - value)).clamp(0, totalSeconds);
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.playlist_play, size: 26),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        '${widget.label} 실행 중...',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+      child: Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              final value = _controller.value;
+              final done = value >= 1.0;
+              final remaining = (totalSeconds * (1 - value)).ceil();
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 132,
+                    height: 132,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox.expand(
+                          child: CircularProgressIndicator(
+                            value: done ? null : value,
+                            strokeWidth: 9,
+                            strokeCap: StrokeCap.round,
+                            backgroundColor: _track,
+                            valueColor:
+                                const AlwaysStoppedAnimation<Color>(_accent),
+                          ),
                         ),
-                      ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${(value * 100).round()}',
+                              style: const TextStyle(
+                                fontSize: 38,
+                                fontWeight: FontWeight.w800,
+                                color: _ink,
+                                height: 1.0,
+                              ),
+                            ),
+                            const Text(
+                              '%',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: _muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: value,
-                    minHeight: 12,
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  done
-                      ? '마무리 중...'
-                      : '${(value * 100).round()}%  ·  ${remaining.toStringAsFixed(1)}초 남음',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 15, color: Color(0xFF7D848D)),
-                ),
-              ],
-            );
-          },
+                  const SizedBox(height: 24),
+                  Text(
+                    widget.label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      color: _ink,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    done ? '마무리 중...' : '$remaining초 남음',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 15, color: _muted),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

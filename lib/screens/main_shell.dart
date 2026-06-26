@@ -21,7 +21,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-  static const _titles = ['마스터 제어', '전원제어', 'IR제어', 'PC', 'Serial', '설정'];
+  static const _titles = ['홈', '전원제어', 'IR제어', 'PC', 'Serial', '설정'];
 
   static const _screens = [
     HomeScreen(),
