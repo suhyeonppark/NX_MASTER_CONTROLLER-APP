@@ -195,6 +195,25 @@ class AppState extends ChangeNotifier {
 
   String newMacroId() => 'macro_${DateTime.now().microsecondsSinceEpoch}';
 
+  /// Total expected wait for a macro, summing the `delayAfterMs` of every step
+  /// recursively through nested macros (a macro step may itself be a macro).
+  /// Used to drive the progress bar shown while the macro runs. Non-macro
+  /// actions contribute nothing. Returns [Duration.zero] for unknown ids.
+  Duration estimatedMacroDuration(String actionId) =>
+      Duration(milliseconds: _macroDelayMs(actionId, const {}));
+
+  int _macroDelayMs(String actionId, Set<String> visited) {
+    if (visited.contains(actionId)) return 0; // cycle guard
+    final def = _actionMap[actionId];
+    if (def is! MacroAction) return 0;
+    final next = {...visited, actionId};
+    var total = 0;
+    for (final step in def.steps) {
+      total += step.delayAfterMs + _macroDelayMs(step.actionId, next);
+    }
+    return total;
+  }
+
   void unawaitedTest() {
     unawaited(testNx());
   }

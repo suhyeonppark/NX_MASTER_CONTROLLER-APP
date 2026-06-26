@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../actions/action_models.dart';
 import '../app_state.dart';
 import '../models/command_result.dart';
 import 'confirm_dialog.dart';
+import 'macro_progress_dialog.dart';
 
 /// Runs [actionId] exactly like a [ControlButton] tap: an optional confirmation
 /// dialog, dispatch via [AppState.runAction], then user feedback (a snackbar, or
@@ -30,11 +32,39 @@ Future<bool> runActionWithFeedback(
   if (!context.mounted) return false;
   final messenger = ScaffoldMessenger.of(context);
 
+  // For macros, show a modal progress bar that fills over the macro's estimated
+  // total wait (the sum of its step delays, recursively through nested macros)
+  // so the operator sees how long is left instead of staring at a frozen screen.
+  final isMacro = state.router.lookup(actionId) is MacroAction;
+  final navigator = Navigator.of(context, rootNavigator: true);
+  // Floor the visible time so a very short macro doesn't flash on/off.
+  final estimated = state.estimatedMacroDuration(actionId);
+  final display = estimated.inMilliseconds < 700
+      ? const Duration(milliseconds: 700)
+      : estimated;
+  if (isMacro) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => MacroProgressDialog(label: label, duration: display),
+    );
+  }
+
+  final stopwatch = Stopwatch()..start();
   CommandResult result;
   try {
     result = await state.runAction(actionId);
   } catch (e) {
     result = CommandResult.fail('예기치 못한 오류: $e');
+  }
+
+  if (isMacro) {
+    // Hold the dialog until the bar has visually completed, then dismiss it.
+    final remaining = display.inMilliseconds - stopwatch.elapsedMilliseconds;
+    if (remaining > 0) {
+      await Future<void>.delayed(Duration(milliseconds: remaining));
+    }
+    if (navigator.canPop()) navigator.pop();
   }
 
   if (!context.mounted) return true;
